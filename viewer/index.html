@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deeeeep Research · 报告库</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..800;1,6..72,400..700&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css?v=20">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__left">
+    <a class="topbar__brand" href="?" aria-label="Deeeeep Research · 回到首页">
+      <span class="topbar__brand__italic">Deeeeep</span>
+      <span class="topbar__brand__sep" aria-hidden="true">·</span>
+      <span class="topbar__brand__roman">Research</span>
+    </a>
+    <button class="topbar__library-btn" id="library-btn" aria-label="打开报告库">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4"  y="4" width="4" height="16" rx="0.5"/>
+        <rect x="10" y="5" width="4" height="14" rx="0.5"/>
+        <rect x="16" y="6" width="4" height="12" rx="0.5"/>
+      </svg>
+      <span class="topbar__library-btn__label">报告库</span>
+      <span class="topbar__count" id="library-count">…</span>
+    </button>
+  </div>
+  <div class="topbar__right">
+    <button class="focus-btn" id="focus-toggle" aria-label="专注模式">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="focus-btn__label">专注模式</span>
+    </button>
+    <button class="iconbtn" id="theme-toggle" aria-label="切换主题">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"
+              fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<aside class="library-drawer" id="library-drawer" hidden>
+  <div class="library-drawer__head">
+    <h2>报告库</h2>
+    <button class="iconbtn" id="library-close" aria-label="关闭">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="library-drawer__search">
+    <label class="library-drawer__search-field">
+      <svg class="library-drawer__search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="6.8" cy="6.8" r="4.3"/>
+        <line x1="10" y1="10" x2="13.4" y2="13.4"/>
+      </svg>
+      <input type="text" id="library-search" placeholder="搜索标题…" autocomplete="off" spellcheck="false">
+    </label>
+  </div>
+  <div class="library-drawer__list" id="library-list"></div>
+</aside>
+<div class="library-scrim" id="library-scrim" hidden></div>
+
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="目录">
+    <div class="toc__sticky">
+      <div class="toc__label">本文目录</div>
+      <ol class="toc__list" id="toc-list"></ol>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <div class="empty" id="empty-state">
+      <p>正在加载报告…</p>
+    </div>
+  </main>
+</div>
+
+<div class="cite-pop" id="cite-pop" hidden role="tooltip"></div>
+
+<script src="lib/markdown-it.min.js"></script>
+<script src="lib/markdown-it-anchor.umd.js"></script>
+<script src="app.js?v=20" defer></script>
+</body>
+</html>

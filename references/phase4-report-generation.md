@@ -213,7 +213,7 @@ NEVER 在每个章节末尾添加独立的"（证据确定性：X）"括注段�
 
 ## Viewer 格式契约（硬约束）
 
-报告由配套 viewer 网页渲染。以下规则对应 viewer 的解析逻辑，违反会导致渲染失败或视觉混乱。标杆样本见 `D:/AI/ask/reports/ai-coding-agent-comparison-2026-04.md`。
+报告由配套 viewer 网页渲染。以下规则对应 viewer 的解析逻辑，违反会导致渲染失败或视觉混乱。标杆样本见 `reports/ai-coding-agent-comparison-2026-04.md`。
 
 ### 文档骨架
 
@@ -234,7 +234,7 @@ NEVER 在每个章节末尾添加独立的"（证据确定性：X）"括注段�
 
 ### sources.json
 
-与报告同名的 `.sources.json` 文件并列输出到 `D:/AI/ask/reports/` 目录。viewer 从中读取来源数据渲染弹窗和底部引用列表。
+与报告同名的 `.sources.json` 文件并列输出到 `reports/` 目录。viewer 从中读取来源数据渲染弹窗和底部引用列表。
 
 **文件结构必须是**：`{"sources": [...]}` —— 一个对象，`sources` 键包含来源数组。NEVER 输出裸数组 `[...]`。
 
@@ -266,14 +266,14 @@ NEVER 在每个章节末尾添加独立的"（证据确定性：X）"括注段�
 
 报告文件名：`{主题关键词}-{YYYY-MM}.md`（全小写、连字符分隔、英文）。
 来源文件名：与报告同名但后缀为 `.sources.json`。
-两个文件都写入 `D:/AI/ask/reports/` 目录。
+两个文件都写入 `reports/` 目录。
 
 **步骤 2 · 程序化格式验证**
 
 报告和 sources.json 写入后，运行验证脚本：
 
 ```bash
-py D:/AI/ask/viewer/validate_report.py D:/AI/ask/reports/{文件名}.md
+py viewer/validate_report.py reports/{文件名}.md
 ```
 
 脚本检查：metadata 字段是否只有规定的两个、H1 是否唯一、第一个 H2 是否为 TL;DR、标题是否有手工编号、角标格式是否正确（禁止逗号/连字符连写）、正文是否有裸 URL、sources.json 格式是否为 `{"sources": [...]}`、6 个必需字段是否齐全、正文角标和 sources.json 编号是否一一对应。
@@ -291,14 +291,14 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/viewer/
 - 返回 `200` → 服务正常，直接进入交付
 - 返回其他或不可达 → 用 `py` 命令启动服务：
   ```bash
-  cd D:/AI/ask/viewer && py serve.py &>/dev/null &
+  cd viewer && py serve.py &>/dev/null &
   ```
   等待 3 秒后重新检测。最多重试 3 次（每次间隔 3 秒）。3 次后仍不通过 → 向用户报告"viewer 服务启动失败"，同时附上报告文件路径让用户手动查看。
 
 环境就绪后，向用户输出以下两行（每次都必须输出，格式固定）：
 
 ```
-报告文件：file:///D:/AI/ask/reports/{文件名}.md
+报告文件：file:///reports/{文件名}.md
 在线查看：http://127.0.0.1:8765/viewer/?report={文件名不含.md}
 ```
 

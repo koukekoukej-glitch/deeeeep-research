@@ -64,7 +64,7 @@ Phase 4 报告生成 ──→ references/phase4-report-generation.md（自包�
 
 ### Phase 4：报告生成
 
-**门控**：读取 `references/phase4-report-generation.md`，严格按其格式契约生成报告。把分析结论转化为用户能一遍读懂、觉得可靠的报告，写入 `D:/AI/ask/reports/` 目录，并向用户交付报告文件链接和在线查看链接。
+**门控**：读取 `references/phase4-report-generation.md`，严格按其格式契约生成报告。把分析结论转化为用户能一遍读懂、觉得可靠的报告，写入 skill 目录下的 `reports/` 目录，并向用户交付报告文件链接和在线查看链接。
 
 **完成条件**：报告 + sources.json 写入成功，角标一致性验证通过，两个链接已交付给用户。
 
