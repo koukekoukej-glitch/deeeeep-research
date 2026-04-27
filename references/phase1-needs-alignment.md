@@ -264,4 +264,49 @@ YMYL 模式的核心变化：优先使用一手权威来源，对结论的不确
 | 用户明确要求"先告诉我你打算怎么查" | 展示计划，等用户确认 |
 | 普通话题 | 展示工作假设和子问题列表，然后开始研究 |
 
+---
+
+## user_profile.json 输出契约（硬约束）
+
+phase 1 完成后必须把用户对齐结果以结构化形式写入 `user_profile.json`、供 phase 4 写报告时按字段调用——这是 5E 失败模式（浪费用户调研）的硬路径防御。phase 1 收集的具体信息如果只留在对话里、phase 4 写报告时往往陷入"完成报告骨架"的惯性、忘记 phase 1 那个具体的人在等什么答案。schema 化后强制 phase 4 按字段对齐、不能漏。
+
+### 文件位置与命名
+
+文件名：`{主题关键词}-{YYYY-MM}.user_profile.json`（和报告同名、后缀 `.user_profile.json`）。位置：`REPORTS_DIR`（即当前工作目录下的 `reports/` 子目录，详见 SKILL.md「路径约定」段）。命名规则与 phase 4 报告文件一致——phase 1 完成时主 agent 已能确定研究主题、按命名规则提前创建该文件。
+
+### 8 字段 schema
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `user_role` | string | 用户的角色身份（"技术策划"、"PM"、"医生"、"投资人"、"学生" 等）。phase 1 对话中用户自己交代或从其语境推断 |
+| `user_expertise_level` | enum | 用户对**研究主题**的熟悉度，4 档之一：`unfamiliar`（陌生、需大量背景铺垫）/ `basic`（懂基本概念、能看懂普通介绍）/ `proficient`（深入了解、能看懂专业讨论）/ `expert`（专家、要看到他不知道的细节） |
+| `decision_context` | string | 用户拿到报告后要做的**具体**决策、一句话。例："决定是否把团队代码补全工具从 Copilot 切换到 Cursor"。模糊的"了解一下" / "做参考" 不算合格的 decision_context、要追问到具体动作 |
+| `key_concerns` | array of string | 用户最关心的子问题列表（来自 phase 1 对话明确表达过的）。每条一句话、按用户原话语气记录 |
+| `known_terms` | array of string | 用户在 phase 1 对话中**主动使用过**或**明确说自己理解**的术语。这些术语 phase 4 写作时**不需要**配类比解释（已经懂） |
+| `unfamiliar_terms` | array of string | 用户在 phase 1 对话中**表达过陌生**或**问过含义**的术语。这些术语 phase 4 写作时**必须**配类比解释（参见 phase 4「类比强制」节） |
+| `constraints` | array of string | 用户的硬约束。例：`["预算 1 万以内"、"3 月底前出结果"、"团队 5 人以下"、"必须符合 GDPR"]` |
+| `avoid_topics` | array of string | 用户明确说**不需要研究**的方向。例：`["不要看安全合规、初创公司没这要求"、"不需要历史回顾、只看 2025 年后"]` |
+
+### 字段填写纪律
+
+- `user_role` / `user_expertise_level` 必须有具体值——不能填 `"未知"` 或 `"待定"`。如果 phase 1 对话没获取到、回去追问或基于已有信息合理推断（如用户提到 "我们团队"、"我做产品决策" → 推断 PM 类角色）
+- `decision_context` 必须是 phase 1 对话里**用户自己说过**的决策、不能 phase 1 没问就编一个
+- `known_terms` / `unfamiliar_terms` 不强求穷尽（phase 1 对话不可能盖到所有术语）、但已经在对话中出现的术语必须分类——不允许"对话里讨论过 X 但 schema 里没记录"
+- `constraints` / `avoid_topics` 没有就填空数组 `[]`、不允许漏字段
+
+### phase 4 调用契约
+
+phase 4 写报告时 hard call 这个文件、按以下规则使用各字段：
+
+| 字段 | phase 4 怎么用 |
+|---|---|
+| `user_role` | 报告语气、举例、参考物（PM 用 SaaS 产品做参照、医生用临床指标做参照） |
+| `user_expertise_level` | `unfamiliar` → 大量类比 + 背景铺垫；`expert` → 直接进专业讨论、跳过基础解释 |
+| `decision_context` | 「主线复述与回扣」段最后一句**必须**接回这个具体决策、不允许写成泛泛"对该领域的全面分析" |
+| `key_concerns` | 「详细分析」段必须按 key_concerns 的优先级组织、不能用别的逻辑切片 |
+| `known_terms` | 这些术语在报告中**省略**类比解释（节省篇幅） |
+| `unfamiliar_terms` | 这些术语首次出现时**必须**配类比解释 |
+| `constraints` | 报告中**至少回应一次每条约束**——例 "在你的预算范围内、A 方案最合适" / "在你的截止日前、B 方案是唯一可行的" |
+| `avoid_topics` | 这些方向在报告中**不出现**——出现说明 phase 4 没读 phase 1 输出 |
+
 完成 Phase 1 后 → 读取 `references/phase2-data-collection.md` 开始数据收集。

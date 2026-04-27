@@ -52,7 +52,7 @@
 2. **子问题列表**——明确说清要回答哪几个子问题
 3. **YMYL 标记**——如果涉及 YMYL 话题，告知子代理采用更严格的证据标准
 4. **失败重构规则**——首轮搜不到时换同义术语重试——每轮只改一个维度（换词 → 调范围 → 换语言/来源），连续两轮零结果且无新策略可试时标记为未找到
-5. **输出要求**——对每条找到的信息返回：来源 URL、来源层级、关键发现摘要、利益冲突标注
+5. **输出要求**——按本子代理方法论文档「输出格式」节定义的字段表返回**结构化数据**。每条来源含 11 个字段（url / title / tier / key_quotes / summary / relevance_score / as_of_date / status / interest_conflict / fallback_condition + 领域专属字段如 citation / version_scope / content_type / core_index）。**key_quotes 必须是原文 verbatim、不是子 agent 改写的摘要**——主 agent 在 phase 2.5 会基于这些字段选 8-12 个 URL 全文深读、phase 4 直接引用 key_quotes 做原文证据，子 agent 改写后原文细节就丢了
 
 **六个子代理的方法论文档：**
 
@@ -78,7 +78,7 @@
 
 首轮搜不到时换同义术语重试——每轮只改一个维度（换词 → 调范围 → 换语言/来源），连续两轮零结果且无新策略可试时标记为未找到。
 
-对每条找到的信息返回：来源 URL、来源层级（一手权威/强二手/灰色一手/聚合转述）、关键发现摘要（2-3 句）、利益冲突标注（如有）。"
+对每条找到的信息按 `references/agents/en-academic.md` 的「输出格式」节定义的字段表返回**结构化数据**：url、title、tier（一手权威/强二手/灰色一手/聚合转述）、key_quotes（原文片段 verbatim 1-3 段）、summary（2-3 句概括）、relevance_score、as_of_date（关键数据实际时点）、status（confirmed/rumored/estimated/outdated）、interest_conflict、fallback_condition、citation。**key_quotes 必须是原文 verbatim、不是改写的摘要**——主 agent 写报告时需要直接引用原话。"
 </example>
 
 ---
@@ -99,4 +99,4 @@
 
 搜索进行中发现问题比预期复杂得多 → 告知用户，让用户决定是否继续深入。每完成 2-3 个子问题的搜索后，向用户简要汇报当前进展和初步发现方向。
 
-完成 Phase 2 后 → 读取 `references/phase3-evidence-analysis.md` 开始证据分析。
+完成 Phase 2 后 → 读取 `references/phase2.5-selective-deep-read.md` 开始选择性深读。

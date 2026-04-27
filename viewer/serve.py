@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-"""本地报告浏览器的启动脚本。
+"""Deeeeep Research 报告浏览器。
 
-扫描 ../reports/ 目录、生成 manifest.json、启动 http server、打开浏览器。
-每次浏览器请求 /viewer/manifest.json 时会重新扫描目录，
-所以新增报告只需在浏览器里刷新即可，不必重启服务。
+viewer 资源从脚本所在目录读，报告从 CLI 参数（或当前工作目录）的 reports/ 子目录读。
+每次浏览器请求 /viewer/manifest.json 时重新扫描 reports 目录，新增报告刷新即可。
+
+用法：
+  py serve.py                    # 报告目录 = CWD/reports/
+  py serve.py /path/to/project   # 报告目录 = /path/to/project/reports/
 """
 
 import sys
@@ -15,15 +18,15 @@ import http.server
 import json
 import re
 import socketserver
-import sys
 import threading
 import time
 import webbrowser
 from pathlib import Path
+from urllib.parse import unquote
 
-ROOT = Path(__file__).resolve().parent.parent
+VIEWER = Path(__file__).resolve().parent
+ROOT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path.cwd()
 REPORTS = ROOT / "reports"
-VIEWER = ROOT / "viewer"
 PORT = 8765
 
 H1_RE = re.compile(r"^#\s+(.+)$")
@@ -33,7 +36,6 @@ EN_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]*")
 
 
 def count_words(text: str) -> int:
-    """中文按字、英文按词。markdown 标记和 sources URL 影响有限，估算够用。"""
     return len(CJK_RE.findall(text)) + len(EN_WORD_RE.findall(text))
 
 
@@ -70,7 +72,7 @@ def parse_metadata(md_text: str):
     return title, meta_lines, summary
 
 
-def build_manifest():
+def build_manifest_json() -> str:
     items = []
     if REPORTS.exists():
         for p in sorted(REPORTS.glob("*.md")):
@@ -99,41 +101,94 @@ def build_manifest():
         "generated_at": time.time(),
         "reports": items,
     }
-    out = VIEWER / "manifest.json"
-    out.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    return json.dumps(manifest, ensure_ascii=False, indent=2)
 
 
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(ROOT), **kwargs)
-
+class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    def end_headers(self):
-        self.send_header("Cache-Control", "no-store")
-        super().end_headers()
-
     def do_GET(self):
-        path = self.path.split("?", 1)[0].split("#", 1)[0]
+        raw_path = self.path.split("?", 1)[0].split("#", 1)[0]
+        path = unquote(raw_path)
+
+        if path == "/" or path == "":
+            self.send_response(302)
+            self.send_header("Location", "/viewer/")
+            self.end_headers()
+            return
+
         if path.rstrip("/") == "/viewer/manifest.json":
             try:
-                build_manifest()
+                data = build_manifest_json().encode("utf-8")
             except Exception as e:
-                print(f"[warn] rebuild manifest failed: {e}", file=sys.stderr)
-        return super().do_GET()
+                print(f"[warn] build manifest failed: {e}", file=sys.stderr)
+                self.send_error(500)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
+        if path.startswith("/viewer/"):
+            rel = path[len("/viewer/"):]
+            if not rel or rel == "":
+                rel = "index.html"
+            file_path = VIEWER / rel
+            self._serve_file(file_path)
+            return
+
+        if path.startswith("/reports/"):
+            rel = path[len("/reports/"):]
+            file_path = REPORTS / rel
+            self._serve_file(file_path)
+            return
+
+        self.send_error(404)
+
+    def _serve_file(self, file_path: Path):
+        file_path = file_path.resolve()
+        if not file_path.is_file():
+            self.send_error(404)
+            return
+
+        ext = file_path.suffix.lower()
+        content_types = {
+            ".html": "text/html; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".js": "application/javascript; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".md": "text/markdown; charset=utf-8",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".svg": "image/svg+xml",
+        }
+        ct = content_types.get(ext, "application/octet-stream")
+
+        try:
+            data = file_path.read_bytes()
+        except Exception:
+            self.send_error(500)
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", ct)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
 
 
 def main():
-    build_manifest()
     url = f"http://127.0.0.1:{PORT}/viewer/"
     print()
     print("  Deeeeep Research 报告浏览器")
     print(f"  地址: {url}")
-    print(f"  根目录: {ROOT}")
+    print(f"  Viewer: {VIEWER}")
+    print(f"  报告目录: {REPORTS}")
     print("  按 Ctrl+C 停止")
     print()
 
