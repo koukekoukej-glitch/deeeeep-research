@@ -4,6 +4,8 @@
 
 适用于 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 及任何支持自定义 System Prompt + 文件读写 + Shell 执行 + 子 Agent 调度的 LLM 框架。
 
+[English](README.en.md)
+
 ![报告阅读器](screenshot.png)
 
 ---
