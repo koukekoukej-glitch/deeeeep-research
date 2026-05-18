@@ -272,7 +272,7 @@ phase 1 完成后必须把用户对齐结果以结构化形式写入 `user_profi
 
 ### 文件位置与命名
 
-文件名：`{主题关键词}-{YYYY-MM}.user_profile.json`（和报告同名、后缀 `.user_profile.json`）。位置：`REPORTS_DIR`（即当前工作目录下的 `reports/` 子目录，详见 SKILL.md「路径约定」段）。命名规则与 phase 4 报告文件一致——phase 1 完成时主 agent 已能确定研究主题、按命名规则提前创建该文件。
+文件名：`{主题关键词}-{YYYY-MM}.user_profile.json`（和报告同名、后缀 `.user_profile.json`）。位置：`REPORTS_DIR`（即本 skill 目录下的 `reports/` 子目录，详见 SKILL.md「路径约定」段）。命名规则与 phase 4 报告文件一致——phase 1 完成时主 agent 已能确定研究主题、按命名规则提前创建该文件。
 
 ### 8 字段 schema
 

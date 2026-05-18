@@ -258,7 +258,7 @@ phase 3 完成时、必须把整份研究的"主线判断"以结构化形式写�
 
 ### 文件位置与命名
 
-文件名：`{主题关键词}-{YYYY-MM}.report_thesis.json`（与报告同名、后缀 `.report_thesis.json`）。位置：`REPORTS_DIR`（即当前工作目录下的 `reports/` 子目录，详见 SKILL.md「路径约定」段）。
+文件名：`{主题关键词}-{YYYY-MM}.report_thesis.json`（与报告同名、后缀 `.report_thesis.json`）。位置：`REPORTS_DIR`（即本 skill 目录下的 `reports/` 子目录，详见 SKILL.md「路径约定」段）。
 
 ### 6 字段 schema
 

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """Deeeeep Research 报告浏览器。
 
-viewer 资源从脚本所在目录读，报告从 CLI 参数（或当前工作目录）的 reports/ 子目录读。
-每次浏览器请求 /viewer/manifest.json 时重新扫描 reports 目录，新增报告刷新即可。
+viewer 资源和报告都从 skill 自带目录读、不依赖任何外部路径。
+viewer 资源从脚本所在目录读、报告从 skill 根目录（即脚本父目录的父目录）下的 reports/ 子目录读。
+每次浏览器请求 /viewer/manifest.json 时重新扫描 reports 目录、新增报告刷新即可。
 
 用法：
-  py serve.py                    # 报告目录 = CWD/reports/
-  py serve.py /path/to/project   # 报告目录 = /path/to/project/reports/
+  py serve.py                    # 报告目录 = <skill_root>/reports/（默认、推荐）
+  py serve.py /path/to/dir       # 报告目录 = /path/to/dir/reports/（明确指定时）
 """
 
 import sys
@@ -25,7 +26,8 @@ from pathlib import Path
 from urllib.parse import unquote
 
 VIEWER = Path(__file__).resolve().parent
-ROOT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path.cwd()
+SKILL_ROOT = VIEWER.parent
+ROOT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else SKILL_ROOT
 REPORTS = ROOT / "reports"
 PORT = 8765
 

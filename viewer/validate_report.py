@@ -78,6 +78,34 @@ AI_PATTERNS = [
     (r"尽管[^，。\n]{1,30}，但", "'尽管 X 但 Y' 模板收尾"),
 ]
 
+# 语言纯度模式（命中 → 警告，不阻断通过）
+# 见 phase4 文档「写作纪律」段「语言纯度（硬约束）」一节。
+# 选取的是高置信、误伤少的中英混搭模式——人工自检仍是主负责。
+LANGUAGE_PURITY_PATTERNS = [
+    # 固定中英混搭短语（高置信）
+    (r"\bsub-?agents?\b", "sub-agent / subagent → 子代理"),
+    (r"\bcontext\s+(?:engineering|rot|window|management|anxiety)\b",
+     "context [engineering/rot/window/management/anxiety] → 上下文 [工程/腐烂/窗口/管理/焦虑]"),
+    (r"\bcache\s+(?:miss(?:es)?|hits?)\b", "cache [miss/hit] → 缓存 [失效/命中]"),
+    (r"cache\s+(?:命中|利用率|失效)", "cache + 中文 → 缓存 + 中文"),
+    (r"\bsystem\s+prompts?\b", "system prompt → 系统提示词"),
+    (r"\bfeedback\s+loops?\b", "feedback loop → 反馈循环"),
+    (r"\bouter\s+loops?\b", "outer loop → 外层循环"),
+    (r"\breasoning\s+traces?\b", "reasoning trace → 推理轨迹"),
+    (r"\bfeature\s+flags?\b", "feature flag → 特性开关"),
+    (r"\bcontext-centric\b", "context-centric → 以上下文为中心"),
+    (r"\blost-in-the-middle\b", "lost-in-the-middle → 中段遗忘"),
+    # 独立英文单词（中置信 - 可能误伤、命中后人工确认）
+    (r"(?<![-\w])workflows?(?![\w.])", "workflow → 工作流"),
+    (r"(?<![-\w])playbooks?(?![\w])", "playbook → 操作手册"),
+    (r"(?<![-\w])compaction(?![\w])", "compaction → 压缩"),
+    (r"(?<![-\w])verifications?(?![\w])", "verification → 验证"),
+    (r"(?<![-\w])verifiers?(?![\w])", "verifier → 验证器"),
+    (r"(?<![-\w])sandbox(?:es|ing)?(?![\w])", "sandbox → 沙箱"),
+    (r"(?<![-\w])checkpoints?(?![\w])", "checkpoint → 检查点"),
+    (r"(?<![-\w.])benchmarks?(?![-\w])", "benchmark → 基准测试（SWE-bench 等专名豁免）"),
+]
+
 
 def validate(md_path: str) -> tuple[list[str], list[str]]:
     errors = []
@@ -311,6 +339,34 @@ def validate(md_path: str) -> tuple[list[str], list[str]]:
                 f"（首见行 {line_nums[0]}、之后还有 {len(line_nums)-1} 次）"
             )
 
+    # --- 10b. 语言纯度警告（高频中英混搭模式、命中 → 警告）---
+    # 见 phase4 文档「写作纪律」段「语言纯度（硬约束）」一节。
+    # 跳过 `## 引用来源` 段（来源标题里的英文词不是 LLM 写作问题）+ 代码块 + 引用块。
+    purity_hits = {}
+    in_code_p = False
+    in_ref_section_p = False
+    for i, l in enumerate(lines):
+        if re.match(r"^##\s+引用来源\s*$", l):
+            in_ref_section_p = True
+            continue
+        if l.strip().startswith("```"):
+            in_code_p = not in_code_p
+            continue
+        if in_code_p or in_ref_section_p or l.startswith(">"):
+            continue
+        for pat, desc in LANGUAGE_PURITY_PATTERNS:
+            if re.search(pat, l, re.IGNORECASE):
+                purity_hits.setdefault(desc, []).append(i + 1)
+
+    for desc, line_nums in sorted(purity_hits.items()):
+        if len(line_nums) <= 3:
+            warnings.append(f"语言纯度：{desc} 出现于行 {line_nums}")
+        else:
+            warnings.append(
+                f"语言纯度：{desc} 出现 {len(line_nums)} 次"
+                f"（首见行 {line_nums[0]}、之后还有 {len(line_nums)-1} 次）"
+            )
+
     # --- 11. claims.json grounding 检查（phase 3.5 落地后的报告必带）---
     # 与报告同名的 .claims.json 文件存在时校验 schema；不存在时只警告（旧报告允许）
     claims_path = p.with_name(p.stem + ".claims.json")
@@ -489,7 +545,7 @@ if __name__ == "__main__":
         sys.exit(1)
     errs, warns = validate(sys.argv[1])
     if warns:
-        print(f"⚠ {len(warns)} 个警告（不阻断通过、但应人工复查 AI 文风）：")
+        print(f"⚠ {len(warns)} 个警告（不阻断通过、但应人工复查 AI 文风 / 语言纯度）：")
         for w in warns:
             print(f"  ! {w}")
     if errs:

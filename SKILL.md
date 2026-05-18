@@ -14,7 +14,7 @@ description: |
 
 本 skill 自包含，所有运行时组件都在 skill 目录内。以下两个路径贯穿整个工作流程：
 
-- **REPORTS_DIR** = 当前工作目录下的 `reports/` 子目录（即 `{CWD}/reports/`）。所有产出文件（`.md` 报告、`.sources.json`、`.user_profile.json`、`.claims.json`、`.report_thesis.json`、`.workflow.log`）都写到这里。如果 `reports/` 不存在，phase 4 写入前自动创建。
+- **REPORTS_DIR** = 本 skill 目录下的 `reports/` 子目录（即 `~/.claude/skills/deeeeep-research/reports/`）。所有产出文件（`.md` 报告、`.sources.json`、`.user_profile.json`、`.claims.json`、`.report_thesis.json`、`.workflow.log`）都写到这里。如果 `reports/` 不存在，phase 4 写入前自动创建。
 - **VIEWER_DIR** = 本 skill 自带的 `viewer/` 目录（即 `~/.claude/skills/deeeeep-research/viewer/`）。包含验证脚本 `validate_report.py`、本地浏览服务 `serve.py`、以及前端资源。
 
 后续文档中所有 `REPORTS_DIR` 和 `VIEWER_DIR` 都指向上述路径。运行验证脚本和启动 viewer 服务时，使用这些路径的完整展开形式。
@@ -69,7 +69,7 @@ Phase 4   报告生成 ──→ references/phase4-report-generation.md（自包
 
 ### Phase 2：数据收集
 
-**门控**：读取 `references/phase2-data-collection.md`，按其调度逻辑派遣子 Agent。按领域分组并行搜索，每组子 Agent 带着领域专属的搜索策略和权威判断标准工作。子 Agent 返回结构化字段（含 key_quotes 原文片段）而非自由文本摘要——为 Phase 2.5 选择性深读和 Phase 4 原文引用提供素材。
+**门控**：读取 `references/phase2-data-collection.md`，按其调度逻辑派遣子 Agent。按领域和搜索方向并行搜索——同一领域内有多个独立搜索方向时，为每个方向各派一个子 Agent 并行工作，而不是让一个子 Agent 串行包办。每个子 Agent 带着领域专属的搜索策略和权威判断标准工作。子 Agent 返回结构化字段（含 key_quotes 原文片段）而非自由文本摘要——为 Phase 2.5 选择性深读和 Phase 4 原文引用提供素材。
 
 **完成条件**：所有子 Agent 返回证据，或在超时/无结果时显式记录缺口。未完成不进入 Phase 2.5。
 
@@ -151,6 +151,7 @@ LLM 对"回退-修复-验证"循环没有疲劳感、可以无限循环。如果
 - **结论先行、证据后补**：先有倾向再找支持证据，忽略反面。每个结论主动搜反面证据。
 - **过度引用弱来源**：有高质量来源时不要因为低质量来源更容易找到就大量用。
 - **用"进一步研究"敷衍**：不说清缺什么、下一步查什么，"有待进一步研究"等于没说。
+- **中英夹杂、可翻译的英文词不翻**：context（上下文）、cache（缓存）、prompt（提示词）、sub-agent（子代理）、verification（验证）、workflow（工作流）、benchmark（基准测试）、playbook（操作手册）、sandbox（沙箱）、compaction（压缩）这类普通词必须翻成中文、不能因为"AI 圈行话"就保留英文。豁免范围（公司名 / 产品名 / 文件名 / 代码标识符 / API SDK MCP 等业界稳定缩写 / 用户 phase 1 已确认的核心术语）按 phase4 写作纪律「语言纯度」节路由表处理。整段英文引用必须配紧邻中文翻译。
 
 ### 自检
 

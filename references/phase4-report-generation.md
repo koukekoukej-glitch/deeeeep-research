@@ -341,6 +341,73 @@ AI 生成的文字有一组高度可识别的"AI 痕迹"。这些词或句式单
 
 **警告处理纪律**：validate 输出的 `! AI 文风：...` 警告**必须人工过一遍**——对每条命中段落自行判断是不是真的在套 AI 模板，是就改、不是就留。不允许"既然不阻断就全部忽略"的态度——这条规则失守，本节就退化成摆设。
 
+### 语言纯度（硬约束）
+
+**所有可以用中文表达的概念必须用中文**。模型默认会把英文行话当专有名词保留——`context`、`sub-agent`、`cache miss`、`verification`、`workflow`、`playbook` 这些词在中文里都有公认对应词、保留英文是无意识跟着英文素材走、不是判断结果。
+
+**为什么是硬约束**：phase 2 / 3 抓的资料以英文为主、AI 圈语料也偏英文、模型在 phase 4 写中文时注意力会被英文素材拉偏。不在这一步显式拦截、产出报告必然中英夹杂——读者要一边读中文一边在脑里做英汉切换、阅读流畅度直线下降。这是给中文读者的报告、不是 AI 圈内部交流。
+
+**因为你正在被英文素材拉偏、所以下面这张表的判断顺序不能颠倒、也不能跳过——它是给你的注意力补外挂。**
+
+**路由表**——每个英文词进入报告前、按以下顺序匹配豁免类、匹配不到 1-8 行的必须按第 9 行翻成中文。**第 9 行是封口规则、所有落在 1-8 行之外的英文片段都走这一条、没有第三态**：
+
+| # | 类别 | 处理 | 例子 |
+|---|------|------|------|
+| 1 | 公司名 / 产品名 / 人名 / 机构 | 保留原文 | OpenAI、Cursor、Anthropic、月之暗面、Ryan Lopopolo |
+| 2 | 模型名 / 版本号 | 保留原文 | Claude Opus 4、GPT-5、Kimi K2.6、Qwen3-Coder |
+| 3 | 文件名 / 代码标识符 / 配置项 / 函数名 | 保留原文 | SKILL.md、agents.max_threads、init.sh、~/.codex/agents/ |
+| 4 | benchmark 名 / 度量单位 / 数据格式 | 保留原文 | SWE-bench、HLE、USD/MTok、token、JSON、JSONL |
+| 5 | 通用计算与互联网术语缩写（**白名单**） | 首次出现写"中文译名（缩写）"、后续可只用缩写 | **白名单（仅这些走第 5 行）**：API、SDK、MCP、CLI、IDE、URL、DOI、HTTP、JSON、CSV、SQL、GPU、CPU、RAM。**白名单之外的 AI 子领域缩写**（如 KV-cache、CoT、RLHF、RAG、ReAct、MoE、PPO、DPO、SAE、SFT）**不走第 5 行、走第 6 行**——查 `known_terms` |
+| 6 | user_profile.json 的 `known_terms` 数组中含此词 | 判断依据是查 `known_terms` 数组实际命中、不允许凭印象推测。命中 → 首次出现配中文释义、后续可直接用 | `known_terms` 含 "harness" → 首次"agent harness（承载层）"、后续可"harness 工程化"。任何普通英文词（包括 agent、context、framework、harness 等）都按此查表判断——没有"AI 圈行话"豁免类、没有特例 |
+| 7 | 论文 / 文章 / 博客标题 | 保留原文 + 首次出现配中文翻译 | `"Don't Build Multi-Agents"`（"别造多智能体系统"） |
+| 8 | 整段英文引用（≥ 5 个英文词的连续片段） | 保留原文 + 紧邻位置配中文翻译、不可只给原文 | 见下例 4 |
+| 9 | **前 8 行均不匹配的英文词** | **必须翻成中文、禁止保留** | 见下文违规形状示例 |
+
+**违规形状示例**——下面的清单只是给你看违规长什么样、**不是穷举黑名单**。判断流程仍然是路由表——先匹配 1-8 行、不匹配就翻、**不要回头查清单是否含此词**：
+
+- 概念词例：context（上下文）、framework（框架）、architecture（架构）……及所有同类抽象名词
+- 行为词例：verify / verification（验证）、orchestrate / orchestration（编排）、compact / compaction（压缩）……及所有同类动词与名词化变体
+- 角色词例：sub-agent / subagent（子代理）、planner（规划者）、reviewer（审阅者）……及所有同类承担工作的实体名词
+- 工程词例：cache（缓存）、sandbox（沙箱）、workflow（工作流）、playbook（操作手册）、benchmark（基准测试）、prompt（提示词）……及所有同类工程概念
+- 状态词例：trace（轨迹）、log（日志）、session（会话）、thread（线程）……及所有同类运行时状态
+
+**好坏对比**：
+
+例 1（普通行话——最常见的违规类型）：
+- ✗ Manus 那篇文章是 context engineering 这个领域的奠基文献、6 条铁律来自 4 次重写 agent 框架的代价。
+- ✓ Manus 那篇文章是上下文工程领域的奠基文献、6 条铁律来自 4 次重写 agent 框架（agent 命中第 6 行 known_terms、保留）的代价。
+
+例 2（动作词 + 角色词 + 状态词）：
+- ✗ Anthropic 把 verification 三类按可靠性排序：rules-based feedback 最稳、visual feedback 次之、LLM-as-judge 最弱。
+- ✓ Anthropic 把验证手段按可靠性排序：基于规则的反馈（如 lint、tests）最稳、视觉反馈（截图、渲染结果）次之、用 LLM 当裁判最弱。
+
+例 3（缩写处理——首次给全称、后续可只用缩写）：
+- ✗ MCP 把所有可用 tools 的 schema 在 session 开始时注入 context、agent 不论用不用都得带着。
+- ✓ Model Context Protocol（MCP）把所有可用工具的 schema 在会话开始时注入上下文、agent 不论用不用都得带着。
+
+例 4（整段英文引用必须配紧邻翻译）：
+- ✗ Lopopolo 在访谈里说："I'm pretty bearish on [MCP] because the harness forcibly injects all those tokens in the context, and I don't really get a say over it."
+- ✓ Lopopolo 在访谈里说："I'm pretty bearish on [MCP] because the harness forcibly injects all those tokens in the context, and I don't really get a say over it."（"我对 MCP 比较悲观、因为 harness 强行把所有 token 注入上下文、我没有发言权。"）
+
+例 5（核心英文术语——首次释义、后续直用）：
+- 假设 user_profile.json `known_terms` 含 "harness"
+- **"首次"的精确定义**：该报告 markdown 文件中按行号顺序**第一次出现**的位置。不算 phase 1-3 的对话历史、不算其他报告、不算这份 phase4 文档里的示例
+- 报告首次出现：✓ "agent harness（承载层）已成为产品差异化主战场"
+- 后续段落：✓ "harness 工程化"、"跨模型 harness"——不再重复释义
+- 边界：harness 在 H2 段 A 出现 5 次、又在 H2 段 B 出现 3 次 → 按全文首次算（在段 A 第一次出现位置配释义即可、段 A 后 4 次和段 B 全部 3 次都不重复）
+
+**与「类比强制」节的关系**：「类比强制」处理"读者不熟悉的术语首次出现要配类比"、本节处理"凡是有中文译名的英文词必须用中文"。两节正交不重复——前者管理解门槛、后者管语言纯度。两节顺序明确：先决定语言形式（路由表）、再决定要不要加类比。
+
+**自检方法（段内执行、不堆到事后）**：
+
+**每写完一个 H2 段、立即把该段所有连续英文片段圈出来（不含明显属于 1-4 行豁免类的、如公司名 / 产品名 / 文件名）、对每个问"匹配路由表第几行？"。匹配不到 1-8 行的当场翻成中文、再写下一段。不允许把语言纯度自检堆到整篇报告写完之后。**
+
+理由：写完 5000 字报告后注意力已耗尽、事后扫描多半流于形式（要么跳过、要么扫一眼说"看起来都符合"）。段内自检的成本低（单段英文片段数有限）、判断准（注意力还在该段写作上下文中）、错了影响小（一段错只改一段）。
+
+报告整体写完后、再跑 validate 脚本看 `! 语言纯度` 警告作为兜底——脚本扫的是高频违规模式、不可能穷举、人工段内自检仍是主负责。
+
+**警告处理纪律**：validate 输出的 `! 语言纯度：...` 警告**必须人工过一遍**——按警告中给的位置确认是真违规就翻、是合理豁免（如该词在 `known_terms` 里）就保留并继续。"既然不阻断就全部忽略"的态度会让本节退化成摆设。
+
 ---
 
 ### 回扣 phase 1 用户语境（硬约束 + schema 调用）
@@ -515,17 +582,17 @@ phase 3.5 已经把所有强核查项写入 `claims.json`、附带 grounding 判
 
 报告文件名：`{主题关键词}-{YYYY-MM}.md`（全小写、连字符分隔、英文）。
 来源文件名：与报告同名但后缀为 `.sources.json`。
-两个文件都写入 `REPORTS_DIR`（即当前工作目录下的 `reports/` 子目录）。如果 `reports/` 目录不存在，写入前自动创建。
+两个文件都写入 `REPORTS_DIR`（即本 skill 目录下的 `reports/` 子目录、详见 SKILL.md「路径约定」段、绝对路径形如 `~/.claude/skills/deeeeep-research/reports/`）。如果 `reports/` 目录不存在，写入前自动创建。
 
 **步骤 2 · 程序化格式验证**
 
 报告和 sources.json 写入后，运行验证脚本：
 
 ```bash
-py ~/.claude/skills/deeeeep-research/viewer/validate_report.py {CWD}/reports/{文件名}.md
+py ~/.claude/skills/deeeeep-research/viewer/validate_report.py ~/.claude/skills/deeeeep-research/reports/{文件名}.md
 ```
 
-其中 `{CWD}` 是当前工作目录的绝对路径。
+`~/.claude/skills/deeeeep-research/reports/` 是 skill 自带的 `REPORTS_DIR`、详见 SKILL.md「路径约定」段。
 
 脚本检查（错误，阻断通过）：metadata 字段是否只有规定的两个、H1 是否唯一、第一个 H2 是否为 TL;DR、标题是否有手工编号、章节标题是否为描述性话题标签、角标格式是否正确（禁止逗号/连字符连写）、正文是否有裸 URL、sources.json 格式是否为 `{"sources": [...]}`、6 个必需字段是否齐全、正文角标和 sources.json 编号是否一一对应、markdown 末尾是否有 `## 引用来源` 段且段内 [N] 编号集合等于正文角标集合。
 
@@ -544,20 +611,22 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/viewer/
 ```
 
 - 返回 `200` → 服务正常，直接进入交付
-- 返回其他或不可达 → 用 `py` 命令启动服务（serve.py 位于 `VIEWER_DIR`，接受一个可选参数指定项目根目录，默认使用当前工作目录）：
+- 返回其他或不可达 → 用 `py` 命令启动服务（serve.py 位于 `VIEWER_DIR`、不带参数运行即可、默认会扫 skill 自带的 `reports/` 目录）：
   ```bash
-  py ~/.claude/skills/deeeeep-research/viewer/serve.py {CWD} &>/dev/null &
+  py ~/.claude/skills/deeeeep-research/viewer/serve.py &>/dev/null &
   ```
-  其中 `{CWD}` 是当前工作目录的绝对路径。等待 3 秒后重新检测。最多重试 3 次（每次间隔 3 秒）。3 次后仍不通过 → 向用户报告"viewer 服务启动失败"，同时附上报告文件路径让用户手动查看。
+  等待 3 秒后重新检测。最多重试 3 次（每次间隔 3 秒）。3 次后仍不通过 → 向用户报告"viewer 服务启动失败"、同时附上报告文件路径让用户手动查看。
 
-环境就绪后，向用户输出以下两行（每次都必须输出，格式固定）：
+  **关键纪律**：检测到端口 8765 已被占用、不要复用旧实例——旧实例可能绑定的不是 skill 自带 reports/ 目录、会导致刚生成的报告扫不到。先用 `taskkill //PID <pid> //F`（Windows）或 `kill <pid>`（unix）杀掉旧进程、再用上面命令重启、确保新实例绑定的是 skill 自带 reports/。检测端口占用进程：`netstat -ano | grep :8765`（Windows）/ `lsof -i :8765`（unix）。
+
+环境就绪后、向用户输出以下两行（每次都必须输出、格式固定）：
 
 ```
-报告文件：file:///{CWD}/reports/{文件名}.md
+报告文件：file:///~/.claude/skills/deeeeep-research/reports/{文件名}.md
 在线查看：http://127.0.0.1:8765/viewer/?report={文件名不含.md}
 ```
 
-其中 `{CWD}` 替换为当前工作目录的绝对路径（正斜杠）。
+报告文件路径用 skill 自带的绝对路径（Windows 下展开 `~` 为 `C:/Users/{username}/`、用正斜杠）。所有路径都指向 skill 自带 `reports/` 目录、与外部工作目录无关。
 
 NEVER 省略这两个链接。NEVER 只给其中一个。这是用户判断报告是否成功入库的唯一凭据。
 NEVER 输出"服务可能未启动"之类的猜测——要么确认服务在跑，要么自己启动它。
